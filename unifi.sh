@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 UNIFI_USR=$1
 UNIFI_PWD=$2
