@@ -57,7 +57,7 @@ login_if_needed() {
   echo "$XSRF_HEADERS" > "${CURL_XSRF_HEADERS_FILE}"
 }
 
-firewallrule_is_enabled() {
+firewallrule_get() {
   FIREWALLRULE_ID=$1
   $CURL \
     "${URL_FIREWALLRULE}/${FIREWALLRULE_ID}" \
@@ -91,8 +91,8 @@ firewallrule_enable() {
 login_if_needed || exit 1
 
 case $CMD in
-  status)
-    firewallrule_is_enabled "$FIREWALLRULE_ID" || exit  2
+  get)
+    firewallrule_get "$FIREWALLRULE_ID" || exit  2
     ;;
   on)
     firewallrule_enable "$FIREWALLRULE_ID" true || exit  3
