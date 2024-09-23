@@ -8,19 +8,21 @@ FIREWALLRULE_ID=$4
 CMD=$5
 
 URL_LOGIN="${UNIFI_BASE_URL}/api/auth/login"
-URL_FIREWALLRULE="${UNIFI_BASE_URL}/proxy/network/api/s/default/group/firewallrule"
+URL_FIREWALLRULE="${UNIFI_BASE_URL}/proxy/network/api/s/default/rest/firewallrule"
 URL_SELF="${UNIFI_BASE_URL}/api/users/self"
 
 CURL=/usr/bin/curl
-CURL_OUT_FILE="/tmp/unifi-out-${UNIFI_USR}.txt"
-UNIFI_COOKIES="/tmp/unifi-cookies-${UNIFI_USR}.txt"
+UNIFI_SESSION=${UNIFI_USR}
+CURL_OUT_FILE="/tmp/unifi-${UNIFI_SESSION}-out.txt"
+CURL_XSRF_HEADERS_FILE="/tmp/unifi-${UNIFI_SESSION}-headers.txt"
+CURL_COOKIE_FILE="/tmp/unifi-${UNIFI_SESSION}-cookies.txt"
 
 
 _is_logged_in() {
   $CURL \
     "${URL_SELF}" \
     -X GET \
-    -b "${UNIFI_COOKIES}" \
+    -b "${CURL_COOKIE_FILE}" \
     -S -s -k \
     -o /dev/null \
     -w "%{http_code}"
@@ -28,7 +30,7 @@ _is_logged_in() {
 
 login_if_needed() {
   # if there is cookie file and is user logged in
-  if [ -f ${UNIFI_COOKIES} ] && [[ $(_is_logged_in) == 200 ]] ; then
+  if [ -f ${CURL_COOKIE_FILE} ] && [[ $(_is_logged_in) == 200 ]] ; then
     return 0
   fi
 
@@ -39,8 +41,9 @@ login_if_needed() {
     --data "${DATA}" \
     -H 'content-type: application/json' \
     -H 'dnt: 1' \
-    -c "${UNIFI_COOKIES}" \
+    -c "${CURL_COOKIE_FILE}" \
     -S -s -k \
+    -D "${CURL_XSRF_HEADERS_FILE}" \
     -o "${CURL_OUT_FILE}" \
     -w "%{http_code}")
 
@@ -49,6 +52,9 @@ login_if_needed() {
     cat "${CURL_OUT_FILE}"
     return 1
   fi
+
+  XSRF_HEADERS=$(grep -i '^x-csrf-token:' "${CURL_XSRF_HEADERS_FILE}")
+  echo "$XSRF_HEADERS" > "${CURL_XSRF_HEADERS_FILE}"
 }
 
 firewallrule_is_enabled() {
@@ -56,23 +62,21 @@ firewallrule_is_enabled() {
   $CURL \
     "${URL_FIREWALLRULE}/${FIREWALLRULE_ID}" \
     -X GET \
-    -b "${UNIFI_COOKIES}" \
+    -b "${CURL_COOKIE_FILE}" \
     -S -s -k
 }
 
 firewallrule_enable() {
   FIREWALLRULE_ID=$1
   enabled=$2
-  # {"id":["64312f56895b8a044cd0ad49"],"data":{"enabled":false}}
-#  DATA="{\"enabled\": ${enabled}}"
-#  DATA="{\"id\":[\"${FIREWALLRULE_ID}\"], \"data\":{\"enabled\": ${enabled}}}"
-  DATA='{"id":["64312f56895b8a044cd0ad49"],"data":{"enabled":false}}'
+  DATA="{\"enabled\": ${enabled}}"
   resp_code=$($CURL \
-    "${URL_FIREWALLRULE}" \
+    "${URL_FIREWALLRULE}/${FIREWALLRULE_ID}" \
     -X PUT \
+    -H "@${CURL_XSRF_HEADERS_FILE}" \
     -H 'content-type: application/json' \
     --data "${DATA}" \
-    -b "${UNIFI_COOKIES}" \
+    -b "${CURL_COOKIE_FILE}" \
     -S -s -k \
     -o "${CURL_OUT_FILE}" \
     -w "%{http_code}")
