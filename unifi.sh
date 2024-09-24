@@ -12,6 +12,7 @@ URL_FIREWALLRULE="${UNIFI_BASE_URL}/proxy/network/api/s/default/rest/firewallrul
 URL_SELF="${UNIFI_BASE_URL}/api/users/self"
 
 CURL=/usr/bin/curl
+UNIFI_SESSION_TIMEOUT_SECS=900 # 15min
 UNIFI_SESSION=${UNIFI_USR}
 CURL_OUT_FILE="/tmp/unifi-${UNIFI_SESSION}-out.txt"
 CURL_XSRF_HEADERS_FILE="/tmp/unifi-${UNIFI_SESSION}-headers.txt"
@@ -30,8 +31,12 @@ _is_logged_in() {
 
 login_if_needed() {
   # if there is cookie file and is user logged in
-  if [ -f ${CURL_COOKIE_FILE} ] && [[ $(_is_logged_in) == 200 ]] ; then
-    return 0
+  if [ -f "${CURL_COOKIE_FILE}" ] ; then
+    COOKIE_FILE_SECS=$(($(date '+%s') - $(date -r "${CURL_COOKIE_FILE}" '+%s')))
+    if [ "${COOKIE_FILE_SECS}" -lt "${UNIFI_SESSION_TIMEOUT_SECS}" ] \
+        && [[ $(_is_logged_in) == 200 ]] ; then
+      return 0
+    fi
   fi
 
   DATA="{\"username\": \"${UNIFI_USR}\", \"password\": \"${UNIFI_PWD}\"}"
