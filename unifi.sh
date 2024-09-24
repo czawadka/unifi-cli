@@ -15,7 +15,7 @@ CURL=/usr/bin/curl
 MD5="$(/usr/bin/which md5sum || echo "md5")"
 
 UNIFI_SESSION_TIMEOUT_SECS=900 # 15min
-UNIFI_SESSION_ID="$(echo -n "${UNIFI_BASE_URL}:${UNIFI_USR}" | "$MD5")"
+UNIFI_SESSION_ID="$(echo -n "${UNIFI_BASE_URL}:${UNIFI_USR}" | "$MD5" | sed 's/[ -]//g')"
 CURL_OUT_FILE="/tmp/unifi-${UNIFI_SESSION_ID}-out.txt"
 CURL_HEADERS_FILE="/tmp/unifi-${UNIFI_SESSION_ID}-headers.txt"
 CURL_XSRF_HEADERS_FILE="/tmp/unifi-${UNIFI_SESSION_ID}-xsrf-headers.txt"
