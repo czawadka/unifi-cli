@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 UNIFI_USR=$1
 UNIFI_PWD=$2
@@ -12,11 +12,13 @@ URL_FIREWALLRULE="${UNIFI_BASE_URL}/proxy/network/api/s/default/rest/firewallrul
 URL_SELF="${UNIFI_BASE_URL}/api/users/self"
 
 CURL=/usr/bin/curl
+MD5="$(/usr/bin/which md5sum || echo "md5")"
+
 UNIFI_SESSION_TIMEOUT_SECS=900 # 15min
-UNIFI_SESSION=${UNIFI_USR}
-CURL_OUT_FILE="/tmp/unifi-${UNIFI_SESSION}-out.txt"
-CURL_XSRF_HEADERS_FILE="/tmp/unifi-${UNIFI_SESSION}-headers.txt"
-CURL_COOKIE_FILE="/tmp/unifi-${UNIFI_SESSION}-cookies.txt"
+UNIFI_SESSION_ID="$(echo -n "${UNIFI_BASE_URL}:${UNIFI_USR}" | "$MD5")"
+CURL_OUT_FILE="/tmp/unifi-${UNIFI_SESSION_ID}-out.txt"
+CURL_XSRF_HEADERS_FILE="/tmp/unifi-${UNIFI_SESSION_ID}-headers.txt"
+CURL_COOKIE_FILE="/tmp/unifi-${UNIFI_SESSION_ID}-cookies.txt"
 
 
 _is_logged_in() {
