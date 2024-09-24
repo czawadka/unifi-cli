@@ -43,7 +43,9 @@ login_if_needed() {
     fi
   fi
 
-  rm -rf "${CURL_TMP_DIR}" ; mkdir -p "${CURL_TMP_DIR}"
+  # cleanup session files for login
+  [ -d "${CURL_TMP_DIR}" ] && rm "${CURL_TMP_DIR}"/* || mkdir -p "${CURL_TMP_DIR}"
+
   DATA="{\"username\": \"${UNIFI_USR}\", \"password\": \"${UNIFI_PWD}\"}"
   resp_code=$($CURL --fail-early \
     "${URL_LOGIN}" \
